@@ -21,7 +21,8 @@ A real-time collaborative coding platform built with Spring Boot, featuring live
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Spring Boot 3.5.14, Java 21 |
+| Frontend | React 19, Vite, Monaco Editor, React Router |
+| Backend | Spring Boot 3.5.14, Java 21 |
 | Auth | JWT (jjwt 0.12.3) + OAuth2 (Google/GitHub) |
 | Database | PostgreSQL 16 |
 | Cache/PubSub | Redis 7 |
@@ -33,6 +34,7 @@ A real-time collaborative coding platform built with Spring Boot, featuring live
 
 ### Prerequisites
 - Java 21+
+- Node.js 18+
 - Docker & Docker Compose
 - Maven 3.9+
 
@@ -41,11 +43,20 @@ A real-time collaborative coding platform built with Spring Boot, featuring live
 docker-compose up -d
 ```
 
-### Run Application
+### Run Backend
 ```bash
 cd codesync-backend
 ./mvnw spring-boot:run
 ```
+
+### Run Frontend
+```bash
+cd codesync-frontend
+npm install
+npm run dev
+```
+
+Then open **http://localhost:5173** in your browser.
 
 ### API Endpoints
 
