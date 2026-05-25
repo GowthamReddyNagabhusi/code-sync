@@ -1,5 +1,6 @@
 package com.codesync.module.auth.service;
 
+import com.codesync.common.exception.ApiException;
 import com.codesync.module.auth.dto.AuthResponse;
 import com.codesync.module.auth.dto.LoginRequest;
 import com.codesync.module.auth.dto.RegisterRequest;
@@ -23,11 +24,11 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already in use");
+            throw ApiException.conflict("Email already in use");
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already taken");
+            throw ApiException.conflict("Username already taken");
         }
 
         User user = User.builder()
@@ -60,7 +61,7 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        ApiException.notFound("User not found"));
 
         String token = jwtUtil.generateToken(user.getEmail());
 
