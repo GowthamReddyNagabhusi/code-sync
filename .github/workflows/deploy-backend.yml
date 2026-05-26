@@ -1,0 +1,48 @@
+name: Deploy Backend to Azure Container Apps
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'codesync-backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:   # Allow manual trigger
+
+env:
+  REGISTRY: ${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io
+  IMAGE_NAME: codesync-backend
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  CONTAINER_APP_NAME: codesync-backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Azure Login ─────────────────────────────────────────────────────────
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ── Build & Push Docker image to ACR ────────────────────────────────────
+      - name: Build and push image to ACR
+        working-directory: codesync-backend
+        run: |
+          az acr build \
+            --registry ${{ secrets.AZURE_REGISTRY_NAME }} \
+            --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --image ${{ env.IMAGE_NAME }}:latest \
+            .
+
+      # ── Deploy to Azure Container Apps ──────────────────────────────────────
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          containerAppName: ${{ env.CONTAINER_APP_NAME }}
+          imageToDeploy: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
