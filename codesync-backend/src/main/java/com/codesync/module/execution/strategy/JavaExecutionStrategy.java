@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class JavaExecutionStrategy implements CodeExecutionStrategy {
 
+    /** Maximum bytes read from stdout/stderr to prevent OOM from runaway output. */
+    private static final int MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB
+
     @Override
     public String getLanguage() {
         return "java";
@@ -71,8 +74,9 @@ public class JavaExecutionStrategy implements CodeExecutionStrategy {
                         .build();
             }
 
-            // Run
-            ProcessBuilder runBuilder = new ProcessBuilder("java", "-cp", tempDir.toString(), "Main");
+            // Run — cap JVM heap so user code can't OOM the server
+            ProcessBuilder runBuilder = new ProcessBuilder(
+                    "java", "-Xmx64m", "-cp", tempDir.toString(), "Main");
             runBuilder.directory(tempDir.toFile());
 
             Process runProcess = runBuilder.start();
@@ -121,6 +125,10 @@ public class JavaExecutionStrategy implements CodeExecutionStrategy {
             String line;
             while ((line = reader.readLine()) != null) {
                 sb.append(line).append("\n");
+                if (sb.length() > MAX_OUTPUT_BYTES) {
+                    sb.append("\n[Output truncated: exceeded 512 KB limit]");
+                    break;
+                }
             }
             return sb.toString().trim();
         }

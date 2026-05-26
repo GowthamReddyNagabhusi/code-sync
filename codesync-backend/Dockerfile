@@ -17,12 +17,27 @@ COPY src ./src
 RUN ./mvnw package -DskipTests -B
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+# Use JDK (not JRE) so the container can compile & run Java user code.
+# Also install Python 3 and GCC for Python/C++ execution.
+FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /app
 
+# Install language runtimes for sandboxed execution:
+#   python3       — runs Python user code directly
+#   g++ / gcc     — compiles and runs C++ user code
+#   musl-dev      — required by g++ on Alpine
+RUN apk add --no-cache \
+    python3 \
+    g++ \
+    gcc \
+    musl-dev
+
 # Non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Give /tmp write access so execution strategies can create temp dirs
+RUN chmod 1777 /tmp
 
 COPY --from=builder /app/target/*.jar app.jar
 

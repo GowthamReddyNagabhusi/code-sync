@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CppExecutionStrategy implements CodeExecutionStrategy {
 
+    /** Maximum bytes read from stdout/stderr to prevent OOM from runaway output. */
+    private static final int MAX_OUTPUT_BYTES = 512 * 1024; // 512 KB
+
     @Override
     public String getLanguage() {
         return "cpp";
@@ -125,6 +128,10 @@ public class CppExecutionStrategy implements CodeExecutionStrategy {
             String line;
             while ((line = reader.readLine()) != null) {
                 sb.append(line).append("\n");
+                if (sb.length() > MAX_OUTPUT_BYTES) {
+                    sb.append("\n[Output truncated: exceeded 512 KB limit]");
+                    break;
+                }
             }
             return sb.toString().trim();
         }
