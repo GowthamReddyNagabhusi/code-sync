@@ -73,9 +73,11 @@ export default function Room() {
   };
 
   const connectWebSocket = useCallback(() => {
-    const ws = new WebSocket(
-      `ws://localhost:8080/ws/editor?token=${token}&roomCode=${roomCode}`
-    );
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const wsScheme = apiBase.startsWith('https') ? 'wss://' : 'ws://';
+    const wsHost = apiBase.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsScheme}${wsHost}/ws/editor?token=${token}&roomCode=${roomCode}`;
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log('WebSocket connected');
