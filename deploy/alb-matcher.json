@@ -1,0 +1,6 @@
+{
+    "TargetGroupArn": "arn:aws:elasticloadbalancing:ap-south-1:649424354235:targetgroup/codesync-backend-tg/706d7d2733e47803",
+    "Matcher": {
+        "HttpCode": "200-403"
+    }
+}
