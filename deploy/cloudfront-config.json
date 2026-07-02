@@ -1,0 +1,42 @@
+{
+  "CallerReference": "codesync-frontend-2026",
+  "Comment": "CodeSync Frontend Distribution",
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "codesync-s3-origin",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+    "Compress": true,
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": ["GET", "HEAD"]
+    }
+  },
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "codesync-s3-origin",
+        "DomainName": "codesync-frontend-649424354235.s3.ap-south-1.amazonaws.com",
+        "S3OriginConfig": {
+          "OriginAccessIdentity": ""
+        },
+        "OriginAccessControlId": "E2FU6ZVLXUQYU3"
+      }
+    ]
+  },
+  "DefaultRootObject": "index.html",
+  "CustomErrorResponses": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "ErrorCode": 403,
+        "ResponsePagePath": "/index.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 0
+      }
+    ]
+  },
+  "PriceClass": "PriceClass_All",
+  "Enabled": true,
+  "HttpVersion": "http2"
+}
