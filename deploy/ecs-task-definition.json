@@ -1,0 +1,120 @@
+{
+  "family": "codesync-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::649424354235:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::649424354235:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "codesync-backend",
+      "image": "649424354235.dkr.ecr.ap-south-1.amazonaws.com/codesync:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+
+      "environment": [
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        },
+        {
+          "name": "DB_HOST",
+          "value": "codesync-db.cheaim62i2d4.ap-south-1.rds.amazonaws.com"
+        },
+        {
+          "name": "DB_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "codesync"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "<YOUR_ELASTICACHE_PRIMARY_ENDPOINT>"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "DB_DDL_AUTO",
+          "value": "update"
+        },
+        {
+          "name": "SHOW_SQL",
+          "value": "false"
+        },
+        {
+          "name": "LOG_LEVEL_APP",
+          "value": "INFO"
+        },
+        {
+          "name": "JWT_EXPIRATION",
+          "value": "86400000"
+        }
+      ],
+
+      "secrets": [
+        {
+          "name": "DB_USERNAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/database:DB_USERNAME::"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/database:DB_PASSWORD::"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/security:JWT_SECRET::"
+        },
+        {
+          "name": "GOOGLE_CLIENT_ID",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GOOGLE_CLIENT_ID::"
+        },
+        {
+          "name": "GOOGLE_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GOOGLE_CLIENT_SECRET::"
+        },
+        {
+          "name": "GITHUB_CLIENT_ID",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GITHUB_CLIENT_ID::"
+        },
+        {
+          "name": "GITHUB_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GITHUB_CLIENT_SECRET::"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/openai:OPENAI_API_KEY::"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/codesync-backend",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

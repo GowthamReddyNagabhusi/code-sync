@@ -1,31 +1,51 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: codesync-backend
 
+  # ── Database ────────────────────────────────────────────────────────────────
+  # Local dev  → falls back to docker-compose defaults (localhost:5433/codesync)
+  # ECS / prod → DB_HOST, DB_PORT, DB_NAME are plain ECS environment variables.
+  #              DB_USERNAME and DB_PASSWORD come from Secrets Manager:
+  #              secret name: codesync/prod/database
   datasource:
-    url: jdbc:postgresql://localhost:5433/codesync
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:codesync}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${DB_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
-        format_sql: true
+        format_sql: false
 
+  # ── Redis / ElastiCache ─────────────────────────────────────────────────────
+  # Local dev  → falls back to localhost:6379
+  # ECS / prod → REDIS_HOST and REDIS_PORT are plain ECS environment variables.
+  #              Endpoints are not sensitive; only credentials are secrets.
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      connect-timeout: 2000ms
 
+  # ── OAuth2 ──────────────────────────────────────────────────────────────────
+  # ECS / prod → all four values injected from Secrets Manager:
+  #              secret name: codesync/prod/oauth
   security:
     oauth2:
       client:
@@ -39,6 +59,9 @@ spring:
             client-secret: ${GITHUB_CLIENT_SECRET:placeholder}
             scope: user:email, read:user
 
+  # ── Spring AI ────────────────────────────────────────────────────────────────
+  # ECS / prod → injected from Secrets Manager:
+  #              secret name: codesync/prod/openai
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:sk-placeholder}
@@ -47,11 +70,41 @@ spring:
           model: gpt-4o
           temperature: 0.3
 
+# ── JWT ──────────────────────────────────────────────────────────────────────
+# ECS / prod → JWT_SECRET injected from Secrets Manager:
+#              secret name: codesync/prod/security
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970_change_this_in_production}
-  expiration: 86400000
+  secret: ${JWT_SECRET:local-dev-secret-change-in-production}
+  expiration: ${JWT_EXPIRATION:86400000}
 
+# ── Actuator ─────────────────────────────────────────────────────────────────
+# Exposes three endpoints used by ECS / ALB:
+#   /actuator/health          → ALB target group health check
+#   /actuator/health/liveness  → is the JVM alive?
+#   /actuator/health/readiness → is the app ready to serve traffic?
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+    redis:
+      enabled: true
+    db:
+      enabled: true
+
+# ── Logging ──────────────────────────────────────────────────────────────────
 logging:
   level:
-    com.codesync: DEBUG
-    org.springframework.security: INFO
+    com.codesync: ${LOG_LEVEL_APP:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
