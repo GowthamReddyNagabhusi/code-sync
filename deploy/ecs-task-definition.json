@@ -1,7 +1,9 @@
 {
   "family": "codesync-backend",
   "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::649424354235:role/ecsTaskExecutionRole",
@@ -17,7 +19,6 @@
           "protocol": "tcp"
         }
       ],
-
       "environment": [
         {
           "name": "SPRING_PROFILES_ACTIVE",
@@ -60,7 +61,6 @@
           "value": "86400000"
         }
       ],
-
       "secrets": [
         {
           "name": "DB_USERNAME",
@@ -95,7 +95,6 @@
           "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/openai:OPENAI_API_KEY::"
         }
       ],
-
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -104,7 +103,6 @@
           "awslogs-stream-prefix": "ecs"
         }
       },
-
       "healthCheck": {
         "command": [
           "CMD-SHELL",
