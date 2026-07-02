@@ -45,6 +45,10 @@
           "value": "6379"
         },
         {
+          "name": "ALLOWED_ORIGINS",
+          "value": "http://codesync-frontend-649424354235.s3-website.ap-south-1.amazonaws.com"
+        },
+        {
           "name": "DB_DDL_AUTO",
           "value": "update"
         },
