@@ -28,6 +28,9 @@ public class EditorWebSocketHandler extends TextWebSocketHandler {
     // roomCode -> CRDT document
     private final Map<String, CrdtDocument> roomDocuments = new ConcurrentHashMap<>();
 
+    // roomCode -> current text string for collaboration fallback
+    private final Map<String, String> roomTexts = new ConcurrentHashMap<>();
+
     // Cursor colors for users
     private static final String[] CURSOR_COLORS = {
             "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4",
@@ -51,12 +54,11 @@ public class EditorWebSocketHandler extends TextWebSocketHandler {
                 email, roomCode, roomSessions.get(roomCode).size());
 
         // Send current document state to new client
-        CrdtDocument doc = roomDocuments.get(roomCode);
+        String currentText = roomTexts.getOrDefault(roomCode, "");
         EditorMessage syncMsg = EditorMessage.builder()
                 .type(EditorMessage.Type.SYNC_RESPONSE)
                 .roomCode(roomCode)
-                .documentState(doc.getAllChars())
-                .documentText(doc.getText())
+                .documentText(currentText)
                 .build();
 
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(syncMsg)));
@@ -87,6 +89,10 @@ public class EditorWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleEdit(WebSocketSession session, String roomCode, EditorMessage msg) {
+        if (msg.getDocumentText() != null) {
+            roomTexts.put(roomCode, msg.getDocumentText());
+        }
+
         CrdtDocument doc = roomDocuments.get(roomCode);
         if (doc != null && msg.getOperation() != null) {
             doc.applyRemote(msg.getOperation());
@@ -109,16 +115,13 @@ public class EditorWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleSyncRequest(WebSocketSession session, String roomCode) throws IOException {
-        CrdtDocument doc = roomDocuments.get(roomCode);
-        if (doc != null) {
-            EditorMessage syncMsg = EditorMessage.builder()
-                    .type(EditorMessage.Type.SYNC_RESPONSE)
-                    .roomCode(roomCode)
-                    .documentState(doc.getAllChars())
-                    .documentText(doc.getText())
-                    .build();
-            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(syncMsg)));
-        }
+        String currentText = roomTexts.getOrDefault(roomCode, "");
+        EditorMessage syncMsg = EditorMessage.builder()
+                .type(EditorMessage.Type.SYNC_RESPONSE)
+                .roomCode(roomCode)
+                .documentText(currentText)
+                .build();
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(syncMsg)));
     }
 
     @Override
@@ -176,6 +179,10 @@ public class EditorWebSocketHandler extends TextWebSocketHandler {
      * Apply a message from Redis (from another server instance).
      */
     public void handleRedisMessage(String roomCode, EditorMessage msg) {
+        if (msg.getDocumentText() != null) {
+            roomTexts.put(roomCode, msg.getDocumentText());
+        }
+
         CrdtDocument doc = roomDocuments.get(roomCode);
         if (doc != null && msg.getOperation() != null) {
             doc.applyRemote(msg.getOperation());

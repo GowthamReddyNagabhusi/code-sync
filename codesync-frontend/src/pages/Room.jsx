@@ -92,7 +92,9 @@ export default function Room() {
             if (msg.documentText) setCode(msg.documentText);
             break;
           case 'EDIT':
-            // In a full impl, apply CRDT op to local doc
+            if (msg.documentText !== undefined && msg.siteId !== user?.email) {
+              setCode(prev => prev === msg.documentText ? prev : msg.documentText);
+            }
             break;
           case 'USER_JOINED':
             setOnlineUsers(prev => [...new Set([...prev, msg.username])]);
