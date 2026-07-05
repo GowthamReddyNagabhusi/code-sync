@@ -23,13 +23,19 @@
 
 # Maven
 target/
+codesync-backend/target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Gradle
-.gradle/
-build/
+# Node
+node_modules/
+codesync-frontend/node_modules/
+
+# Vite / build outputs
+dist/
+codesync-frontend/dist/
+dist-ssr/
 
 # OS
 .DS_Store
@@ -44,3 +50,7 @@ docker-compose.override.yml
 # Environment
 .env
 .env.local
+*.env
+
+# Scratch / temp files
+scratch/
