@@ -1,90 +1,118 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-
-const AuthContext = createContext(null);
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+import { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { API_BASE_URL } from '../services/api';
+import { AuthContext } from './AuthContextInstance';
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem('token'));
+  const [isLoadingAuth, setIsLoadingAuth] = useState(() => Boolean(localStorage.getItem('token')));
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setAuthToken(null);
+    setCurrentUser(null);
+  }, []);
 
   useEffect(() => {
-    if (token) {
-      fetchProfile();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
+    let isMounted = true;
 
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/users/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-      } else {
-        logout();
-      }
-    } catch (err) {
-      console.error('Failed to fetch profile', err);
-      logout();
-    } finally {
-      setLoading(false);
+    if (authToken) {
+      fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+        .then((response) => {
+          if (!isMounted) return null;
+          if (response.ok) {
+            return response.json();
+          }
+          logout();
+          return null;
+        })
+        .then((profileData) => {
+          if (isMounted && profileData) {
+            setCurrentUser(profileData);
+          }
+        })
+        .catch((networkError) => {
+          if (isMounted) {
+            console.error('Failed to verify user authentication session:', networkError);
+            logout();
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setIsLoadingAuth(false);
+          }
+        });
     }
-  };
 
-  const login = async (email, password) => {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
+    return () => {
+      isMounted = false;
+    };
+  }, [authToken, logout]);
+
+  const login = useCallback(async (email, password) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Login failed');
-    }
-    const data = await res.json();
-    localStorage.setItem('token', data.accessToken);
-    setToken(data.accessToken);
-    setUser({ username: data.username, email: data.email, avatarUrl: data.avatarUrl });
-    return data;
-  };
 
-  const register = async (username, email, password) => {
-    const res = await fetch(`${API_BASE}/api/auth/register`, {
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Login failed' }));
+      throw new Error(errorData.message || 'Login failed');
+    }
+
+    const sessionData = await response.json();
+    localStorage.setItem('token', sessionData.accessToken);
+    setAuthToken(sessionData.accessToken);
+    setCurrentUser({
+      username: sessionData.username,
+      email: sessionData.email,
+      avatarUrl: sessionData.avatarUrl,
+    });
+    return sessionData;
+  }, []);
+
+  const register = useCallback(async (username, email, password) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password })
+      body: JSON.stringify({ username, email, password }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Registration failed');
-    }
-    const data = await res.json();
-    localStorage.setItem('token', data.accessToken);
-    setToken(data.accessToken);
-    setUser({ username: data.username, email: data.email });
-    return data;
-  };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Registration failed' }));
+      throw new Error(errorData.message || 'Registration failed');
+    }
+
+    const registrationData = await response.json();
+    localStorage.setItem('token', registrationData.accessToken);
+    setAuthToken(registrationData.accessToken);
+    setCurrentUser({
+      username: registrationData.username,
+      email: registrationData.email,
+    });
+    return registrationData;
+  }, []);
+
+  const authContextValue = {
+    user: currentUser,
+    token: authToken,
+    loading: isLoadingAuth,
+    login,
+    register,
+    logout,
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };
