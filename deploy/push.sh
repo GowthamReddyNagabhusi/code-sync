@@ -7,19 +7,26 @@
 #
 # Prerequisites:
 #   - docker build has been run (codesync-backend:latest exists locally)
-#   - AWS CLI configured with credentials for ap-south-1
+#   - AWS CLI configured with credentials for your region
 #
 # Usage:
-#   ./deploy/push.sh
+#   AWS_ACCOUNT_ID=123456789012 ./deploy/push.sh
 #   IMAGE_TAG=v1.2.0 ./deploy/push.sh
 # =============================================================================
 
 set -euo pipefail
 
-AWS_REGION="ap-south-1"
-AWS_ACCOUNT_ID="649424354235"
+AWS_REGION="${AWS_REGION:-ap-south-1}"
+AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "")}"
+
+if [ -z "$AWS_ACCOUNT_ID" ]; then
+  echo "Error: AWS_ACCOUNT_ID is not set and could not be detected via AWS CLI."
+  echo "Usage: AWS_ACCOUNT_ID=123456789012 ./deploy/push.sh"
+  exit 1
+fi
+
 ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-ECR_REPO="codesync"
+ECR_REPO="${ECR_REPO:-codesync}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 LOCAL_IMAGE="codesync-backend:$IMAGE_TAG"
@@ -32,7 +39,7 @@ if ! docker image inspect "$LOCAL_IMAGE" &>/dev/null; then
   exit 1
 fi
 
-echo "Authenticating with ECR..."
+echo "Authenticating with ECR registry: $ECR_REGISTRY..."
 aws ecr get-login-password --region "$AWS_REGION" | \
   docker login --username AWS --password-stdin "$ECR_REGISTRY"
 echo "Login successful."
