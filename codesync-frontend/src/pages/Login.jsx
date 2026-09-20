@@ -1,51 +1,52 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { Code2, Mail, Lock, ArrowRight } from 'lucide-react';
 import './Auth.css';
 
 export default function Login() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+    setAuthError('');
+    setIsSubmitting(true);
     try {
-      await login(email, password);
-    } catch (err) {
-      setError(err.message);
+      await login(emailAddress, password);
+    } catch (submitError) {
+      setAuthError(submitError.message || 'Failed to authenticate');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="auth-page">
       <div className="auth-container animate-fade-in">
-        <Link to="/" className="auth-brand">
+        <Link to="/" className="auth-brand" aria-label="CodeSync Home">
           <Code2 size={32} />
           <span className="gradient-text">CodeSync</span>
         </Link>
         <h1>Welcome back</h1>
         <p className="auth-subtitle">Sign in to continue coding</p>
 
-        {error && <div className="auth-error">{error}</div>}
+        {authError && <div className="auth-error" role="alert">{authError}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleLoginSubmit} className="auth-form">
           <div className="input-group">
             <Mail size={18} className="input-icon" />
             <input
               type="email"
               className="input-field"
               placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={emailAddress}
+              onChange={(e) => setEmailAddress(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
           <div className="input-group">
@@ -57,16 +58,17 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </div>
-          <button type="submit" className="btn-primary auth-btn" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-            {!loading && <ArrowRight size={18} />}
+          <button type="submit" className="btn-primary auth-btn" disabled={isSubmitting}>
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
+            {!isSubmitting && <ArrowRight size={18} />}
           </button>
         </form>
 
         <p className="auth-footer">
-          Don't have an account? <Link to="/register">Create one</Link>
+          Don&apos;t have an account? <Link to="/register">Create one</Link>
         </p>
       </div>
     </div>

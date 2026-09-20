@@ -1,52 +1,53 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { Code2, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import './Auth.css';
 
 export default function Register() {
   const { register } = useAuth();
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [desiredUsername, setDesiredUsername] = useState('');
+  const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const handleRegisterSubmit = async (event) => {
+    event.preventDefault();
+    setRegistrationError('');
+    setIsSubmitting(true);
     try {
-      await register(username, email, password);
-    } catch (err) {
-      setError(err.message);
+      await register(desiredUsername, emailAddress, password);
+    } catch (submitError) {
+      setRegistrationError(submitError.message || 'Registration failed');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="auth-page">
       <div className="auth-container animate-fade-in">
-        <Link to="/" className="auth-brand">
+        <Link to="/" className="auth-brand" aria-label="CodeSync Home">
           <Code2 size={32} />
           <span className="gradient-text">CodeSync</span>
         </Link>
         <h1>Create account</h1>
         <p className="auth-subtitle">Start collaborating in seconds</p>
 
-        {error && <div className="auth-error">{error}</div>}
+        {registrationError && <div className="auth-error" role="alert">{registrationError}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleRegisterSubmit} className="auth-form">
           <div className="input-group">
             <User size={18} className="input-icon" />
             <input
               type="text"
               className="input-field"
               placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={desiredUsername}
+              onChange={(e) => setDesiredUsername(e.target.value)}
               required
+              autoComplete="username"
             />
           </div>
           <div className="input-group">
@@ -55,9 +56,10 @@ export default function Register() {
               type="email"
               className="input-field"
               placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={emailAddress}
+              onChange={(e) => setEmailAddress(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
           <div className="input-group">
@@ -70,11 +72,12 @@ export default function Register() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              autoComplete="new-password"
             />
           </div>
-          <button type="submit" className="btn-primary auth-btn" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
-            {!loading && <ArrowRight size={18} />}
+          <button type="submit" className="btn-primary auth-btn" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
+            {!isSubmitting && <ArrowRight size={18} />}
           </button>
         </form>
 
