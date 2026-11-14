@@ -10,7 +10,7 @@ import { CreateRoomModal } from '../components/dashboard/CreateRoomModal';
 import { JoinRoomModal } from '../components/dashboard/JoinRoomModal';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
-import { Code2, Plus, DoorOpen } from 'lucide-react';
+import { Code2, Plus, DoorOpen, Sparkles } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -133,6 +133,30 @@ export default function Dashboard() {
             </button>
           </div>
         </header>
+
+        {/* Modern Gemini AI Feature Card */}
+        <div className="dash-ai-banner animate-fade-in">
+          <div className="dash-ai-banner-content">
+            <div className="dash-ai-pill">
+              <Sparkles size={13} className="sparkle-pulse" />
+              <span>Google Gemini 3.8 AI & Docker Sandbox Active</span>
+            </div>
+            <h2>Write together, execute securely, debug with AI.</h2>
+            <p>
+              Each collaborative room is equipped with real-time CRDT synchronization, isolated Docker execution (Java, Python, C++), and instant Gemini AI code reviews.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-ai-banner"
+            onClick={() => {
+              setIsCreateModalOpen(true);
+              setIsJoinModalOpen(false);
+            }}
+          >
+            <Sparkles size={16} /> Create AI Room
+          </button>
+        </div>
 
         {errorMessage && <div className="dash-error" role="alert">{errorMessage}</div>}
 

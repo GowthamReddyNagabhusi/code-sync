@@ -2,7 +2,7 @@ import { memo } from 'react';
 import PropTypes from 'prop-types';
 import {
   ArrowLeft, Copy, Check, Hash, Play,
-  Loader2, FileSearch, Bug, BarChart3, Lightbulb, Users
+  Loader2, Sparkles, Users
 } from 'lucide-react';
 
 /**
@@ -17,9 +17,9 @@ export const RoomHeader = memo(function RoomHeader({
   onLanguageChange,
   isExecuting,
   onRunCode,
-  onTriggerAiAnalysis,
-  showMembersPanel,
-  onToggleMembersPanel,
+  activeSidebarTab,
+  onToggleSidebarTab,
+  collaboratorCount,
   onNavigateBack,
 }) {
   return (
@@ -27,18 +27,18 @@ export const RoomHeader = memo(function RoomHeader({
       <div className="room-topbar-left">
         <button
           type="button"
-          className="btn-icon"
+          className="btn-icon-modern"
           onClick={onNavigateBack}
           title="Back to Dashboard"
           aria-label="Back to Dashboard"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
         </button>
         <div className="room-topbar-info">
-          <h2>{roomName || 'Room'}</h2>
+          <h2>{roomName || 'Collaborative Room'}</h2>
           <button
             type="button"
-            className="room-topbar-code"
+            className="room-code-badge"
             onClick={onCopyRoomCode}
             title="Click to copy room code"
           >
@@ -50,77 +50,55 @@ export const RoomHeader = memo(function RoomHeader({
       </div>
 
       <div className="room-topbar-center">
-        <select
-          className="lang-select"
-          value={selectedLanguage}
-          onChange={(e) => onLanguageChange(e.target.value)}
-          aria-label="Select Programming Language"
-        >
-          <option value="java">Java</option>
-          <option value="python">Python</option>
-          <option value="cpp">C++</option>
-        </select>
+        <div className="lang-selector-pill">
+          <span className="lang-dot" />
+          <select
+            className="lang-select"
+            value={selectedLanguage}
+            onChange={(e) => onLanguageChange(e.target.value)}
+            aria-label="Select Programming Language"
+          >
+            <option value="java">Java 21</option>
+            <option value="python">Python 3.12</option>
+            <option value="cpp">C++ 20</option>
+          </select>
+        </div>
       </div>
 
       <div className="room-topbar-right">
+        {/* Run Code Button */}
         <button
           type="button"
-          className="btn-run"
+          className={`btn-run-modern ${isExecuting ? 'executing' : ''}`}
           onClick={onRunCode}
           disabled={isExecuting}
           title="Execute code in sandboxed Docker container"
         >
-          {isExecuting ? <Loader2 size={16} className="spin" /> : <Play size={16} />}
-          {isExecuting ? 'Running...' : 'Run'}
+          {isExecuting ? <Loader2 size={15} className="spin" /> : <Play size={15} fill="currentColor" />}
+          <span>{isExecuting ? 'Running...' : 'Run Code'}</span>
         </button>
 
-        <div className="ai-buttons" role="group" aria-label="AI Engineering Tools">
-          <button
-            type="button"
-            className="btn-ai"
-            onClick={() => onTriggerAiAnalysis('review')}
-            title="AI Code Review"
-            aria-label="AI Code Review"
-          >
-            <FileSearch size={16} />
-          </button>
-          <button
-            type="button"
-            className="btn-ai"
-            onClick={() => onTriggerAiAnalysis('bugs')}
-            title="AI Bug Detection"
-            aria-label="AI Bug Detection"
-          >
-            <Bug size={16} />
-          </button>
-          <button
-            type="button"
-            className="btn-ai"
-            onClick={() => onTriggerAiAnalysis('complexity')}
-            title="AI Complexity Analysis"
-            aria-label="AI Complexity Analysis"
-          >
-            <BarChart3 size={16} />
-          </button>
-          <button
-            type="button"
-            className="btn-ai"
-            onClick={() => onTriggerAiAnalysis('hint')}
-            title="AI Coding Hint"
-            aria-label="AI Coding Hint"
-          >
-            <Lightbulb size={16} />
-          </button>
-        </div>
-
+        {/* Gemini AI Co-Pilot Toggle */}
         <button
           type="button"
-          className={`btn-icon ${showMembersPanel ? 'active' : ''}`}
-          onClick={onToggleMembersPanel}
-          title="Toggle members sidebar"
-          aria-label="Toggle members sidebar"
+          className={`btn-ai-modern ${activeSidebarTab === 'ai' ? 'active' : ''}`}
+          onClick={() => onToggleSidebarTab('ai')}
+          title="Open Gemini AI Co-Pilot"
         >
-          <Users size={18} />
+          <Sparkles size={15} className="sparkle-pulse" />
+          <span>Gemini AI</span>
+          <span className="ai-status-dot" />
+        </button>
+
+        {/* Collaborators Toggle */}
+        <button
+          type="button"
+          className={`btn-collab-modern ${activeSidebarTab === 'members' ? 'active' : ''}`}
+          onClick={() => onToggleSidebarTab('members')}
+          title="Toggle collaborators list"
+        >
+          <Users size={15} />
+          <span>{collaboratorCount || 1}</span>
         </button>
       </div>
     </header>
@@ -136,8 +114,8 @@ RoomHeader.propTypes = {
   onLanguageChange: PropTypes.func.isRequired,
   isExecuting: PropTypes.bool.isRequired,
   onRunCode: PropTypes.func.isRequired,
-  onTriggerAiAnalysis: PropTypes.func.isRequired,
-  showMembersPanel: PropTypes.bool.isRequired,
-  onToggleMembersPanel: PropTypes.func.isRequired,
+  activeSidebarTab: PropTypes.string,
+  onToggleSidebarTab: PropTypes.func.isRequired,
+  collaboratorCount: PropTypes.number,
   onNavigateBack: PropTypes.func.isRequired,
 };

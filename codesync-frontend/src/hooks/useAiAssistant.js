@@ -11,7 +11,7 @@ import { aiAssistantService } from '../services/api';
  * @returns {{
  *   isAnalyzing: boolean,
  *   aiResult: { analysis: string, type: AiAnalysisCategory, processingTimeMs?: number } | null,
- *   requestAnalysis: (category: AiAnalysisCategory, code: string, language: string) => Promise<void>,
+ *   requestAnalysis: (category: AiAnalysisCategory, code: string, language: string, context?: string) => Promise<void>,
  *   clearAnalysis: () => void,
  * }}
  */
@@ -19,7 +19,7 @@ export function useAiAssistant() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState(null);
 
-  const requestAnalysis = useCallback(async (category, code, language) => {
+  const requestAnalysis = useCallback(async (category, code, language, context = '') => {
     setIsAnalyzing(true);
     setAiResult(null);
 
@@ -38,7 +38,7 @@ export function useAiAssistant() {
     }
 
     try {
-      const response = await runAnalysis({ code, language });
+      const response = await runAnalysis({ code, language, context });
       setAiResult(response);
     } catch (analysisError) {
       setAiResult({

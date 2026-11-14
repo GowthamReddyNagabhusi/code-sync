@@ -17,13 +17,13 @@ export default function Landing() {
       </nav>
 
       <section className="hero">
-        <div className="hero-badge">🚀 Real-time Collaborative Coding</div>
+        <div className="hero-badge">✨ Real-time Collaborative Coding with Gemini AI</div>
         <h1 className="hero-title">
           Code Together,<br />
           <span className="gradient-text">Build Faster</span>
         </h1>
         <p className="hero-subtitle">
-          The collaborative coding platform that lets teams write, execute, and debug code in real-time with AI-powered assistance.
+          The collaborative coding platform that lets teams write, execute in Docker sandboxes, and debug in real-time with Google Gemini AI.
         </p>
         <div className="hero-actions">
           <Link to="/register" className="btn-primary btn-lg">Start Coding Free</Link>
@@ -69,8 +69,8 @@ export default function Landing() {
           </div>
           <div className="feature-card animate-fade-in" style={{ animationDelay: '200ms' }}>
             <div className="feature-icon green"><Bot size={24} /></div>
-            <h3>AI Assistant</h3>
-            <p>Get intelligent code reviews, bug detection, and complexity analysis powered by GPT-4o.</p>
+            <h3>Gemini AI Assistant</h3>
+            <p>Get intelligent code reviews, bug detection, and complexity analysis powered by Google Gemini.</p>
           </div>
           <div className="feature-card animate-fade-in" style={{ animationDelay: '300ms' }}>
             <div className="feature-icon orange"><Zap size={24} /></div>

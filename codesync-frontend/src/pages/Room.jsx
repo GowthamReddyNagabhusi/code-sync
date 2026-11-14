@@ -17,9 +17,9 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import './Room.css';
 
 const DEFAULT_STARTER_CODE = {
-  java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, CodeSync!");\n    }\n}`,
-  python: `def main():\n    print("Hello, CodeSync!")\n\nif __name__ == "__main__":\n    main()`,
-  cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, CodeSync!" << endl;\n    return 0;\n}`,
+  java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, CodeSync with Docker & Gemini AI!");\n    }\n}`,
+  python: `def main():\n    print("Hello, CodeSync with Docker & Gemini AI!")\n\nif __name__ == "__main__":\n    main()`,
+  cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, CodeSync with Docker & Gemini AI!" << endl;\n    return 0;\n}`,
 };
 
 export default function Room() {
@@ -34,8 +34,8 @@ export default function Room() {
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
 
   const [showExecutionPanel, setShowExecutionPanel] = useState(false);
-  const [showAiPanel, setShowAiPanel] = useState(false);
-  const [showMembersPanel, setShowMembersPanel] = useState(true);
+  const [activeSidebarTab, setActiveSidebarTab] = useState('ai'); // 'ai', 'members', or null
+  const [activeAiCategory, setActiveAiCategory] = useState(null);
 
   const { isCopied, copyToClipboard } = useClipboard();
   const { isExecuting, executionResult, executeCode, clearExecution } = useCodeExecution();
@@ -97,10 +97,15 @@ export default function Room() {
     executeCode(sourceCode, selectedLanguage);
   }, [executeCode, sourceCode, selectedLanguage]);
 
-  const handleTriggerAiAnalysis = useCallback((category) => {
-    setShowAiPanel(true);
-    requestAnalysis(category, sourceCode, selectedLanguage);
+  const handleTriggerAiAnalysis = useCallback((category, customPrompt = '') => {
+    setActiveSidebarTab('ai');
+    setActiveAiCategory(category);
+    requestAnalysis(category, sourceCode, selectedLanguage, customPrompt);
   }, [requestAnalysis, sourceCode, selectedLanguage]);
+
+  const handleToggleSidebarTab = useCallback((tabName) => {
+    setActiveSidebarTab((prevTab) => (prevTab === tabName ? null : tabName));
+  }, []);
 
   const handleEditorMount = useCallback((editorInstance) => {
     editorInstanceRef.current = editorInstance;
@@ -109,6 +114,8 @@ export default function Room() {
   if (isLoadingRoom) {
     return <LoadingSpinner message="Entering collaborative room..." />;
   }
+
+  const collaboratorCount = Math.max(1, activeCollaborators?.length || roomMetadata?.members?.length || 1);
 
   return (
     <div className="room">
@@ -121,9 +128,9 @@ export default function Room() {
         onLanguageChange={handleLanguageChange}
         isExecuting={isExecuting}
         onRunCode={handleRunExecution}
-        onTriggerAiAnalysis={handleTriggerAiAnalysis}
-        showMembersPanel={showMembersPanel}
-        onToggleMembersPanel={() => setShowMembersPanel((prev) => !prev)}
+        activeSidebarTab={activeSidebarTab}
+        onToggleSidebarTab={handleToggleSidebarTab}
+        collaboratorCount={collaboratorCount}
         onNavigateBack={() => navigate('/dashboard')}
       />
 
@@ -148,26 +155,48 @@ export default function Room() {
           )}
         </main>
 
-        <aside className={`room-sidebar ${showMembersPanel || showAiPanel ? 'open' : ''}`}>
-          {showMembersPanel && (
-            <MemberListPanel
-              members={roomMetadata?.members}
-              activeCollaboratorEmails={activeCollaborators}
-              currentUserEmail={currentUser?.email}
-            />
-          )}
+        {activeSidebarTab && (
+          <aside className="room-sidebar open animate-slide-in">
+            {/* Sidebar Tab Switcher */}
+            <div className="sidebar-tab-switcher">
+              <button
+                type="button"
+                className={`sidebar-tab-btn ${activeSidebarTab === 'ai' ? 'active' : ''}`}
+                onClick={() => setActiveSidebarTab('ai')}
+              >
+                <span>✨ Gemini AI</span>
+              </button>
+              <button
+                type="button"
+                className={`sidebar-tab-btn ${activeSidebarTab === 'members' ? 'active' : ''}`}
+                onClick={() => setActiveSidebarTab('members')}
+              >
+                <span>👥 Team ({collaboratorCount})</span>
+              </button>
+            </div>
 
-          {showAiPanel && (
-            <AiAssistantPanel
-              isAnalyzing={isAnalyzing}
-              aiResult={aiResult}
-              onClose={() => {
-                setShowAiPanel(false);
-                clearAnalysis();
-              }}
-            />
-          )}
-        </aside>
+            <div className="sidebar-content-view">
+              {activeSidebarTab === 'ai' && (
+                <AiAssistantPanel
+                  isAnalyzing={isAnalyzing}
+                  aiResult={aiResult}
+                  activeCategory={activeAiCategory}
+                  onTriggerAnalysis={handleTriggerAiAnalysis}
+                  onClose={() => setActiveSidebarTab(null)}
+                  onClear={clearAnalysis}
+                />
+              )}
+
+              {activeSidebarTab === 'members' && (
+                <MemberListPanel
+                  members={roomMetadata?.members}
+                  activeCollaboratorEmails={activeCollaborators}
+                  currentUserEmail={currentUser?.email}
+                />
+              )}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );
