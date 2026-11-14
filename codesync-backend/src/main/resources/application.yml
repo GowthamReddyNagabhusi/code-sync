@@ -59,15 +59,14 @@ spring:
             client-secret: ${GITHUB_CLIENT_SECRET:placeholder}
             scope: user:email, read:user
 
-  # ── Spring AI ────────────────────────────────────────────────────────────────
-  # ECS / prod → injected from Secrets Manager:
-  #              secret name: codesync/prod/openai
+  # ── Spring AI (Google Gemini via OpenAI-compatible endpoint) ────────────────
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:sk-placeholder}
+      base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai/}
+      api-key: ${GEMINI_API_KEY:${OPENAI_API_KEY:your_gemini_or_openai_api_key_here}}
       chat:
         options:
-          model: gpt-4o
+          model: ${AI_MODEL:gemini-3.8-flash}
           temperature: 0.3
 
 # ── JWT ──────────────────────────────────────────────────────────────────────
