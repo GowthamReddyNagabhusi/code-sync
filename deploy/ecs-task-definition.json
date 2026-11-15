@@ -4,14 +4,66 @@
   "requiresCompatibilities": [
     "FARGATE"
   ],
-  "cpu": "256",
-  "memory": "512",
-  "executionRoleArn": "arn:aws:iam::649424354235:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::649424354235:role/ecsTaskRole",
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::767918719257:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::767918719257:role/ecsTaskRole",
   "containerDefinitions": [
     {
+      "name": "codesync-postgres",
+      "image": "public.ecr.aws/docker/library/postgres:16-alpine",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 5432,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "POSTGRES_DB",
+          "value": "codesync"
+        },
+        {
+          "name": "POSTGRES_USER",
+          "value": "codesync"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "value": "${DB_PASSWORD}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/codesync-backend",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "postgres"
+        }
+      }
+    },
+    {
+      "name": "codesync-redis",
+      "image": "public.ecr.aws/docker/library/redis:7-alpine",
+      "essential": false,
+      "portMappings": [
+        {
+          "containerPort": 6379,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/codesync-backend",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "redis"
+        }
+      }
+    },
+    {
       "name": "codesync-backend",
-      "image": "649424354235.dkr.ecr.ap-south-1.amazonaws.com/codesync:latest",
+      "image": "767918719257.dkr.ecr.ap-south-1.amazonaws.com/codesync:latest",
       "essential": true,
       "portMappings": [
         {
@@ -26,7 +78,7 @@
         },
         {
           "name": "DB_HOST",
-          "value": "codesync-db.cheaim62i2d4.ap-south-1.rds.amazonaws.com"
+          "value": "localhost"
         },
         {
           "name": "DB_PORT",
@@ -34,11 +86,19 @@
         },
         {
           "name": "DB_NAME",
-          "value": "postgres"
+          "value": "codesync"
+        },
+        {
+          "name": "DB_USERNAME",
+          "value": "codesync"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "value": "${DB_PASSWORD}"
         },
         {
           "name": "REDIS_HOST",
-          "value": "codesync-redis.kaixku.0001.aps1.cache.amazonaws.com"
+          "value": "localhost"
         },
         {
           "name": "REDIS_PORT",
@@ -46,7 +106,7 @@
         },
         {
           "name": "ALLOWED_ORIGINS",
-          "value": "http://codesync-frontend-649424354235.s3-website.ap-south-1.amazonaws.com"
+          "value": "http://codesync-frontend-767918719257.s3-website.ap-south-1.amazonaws.com"
         },
         {
           "name": "DB_DDL_AUTO",
@@ -61,42 +121,24 @@
           "value": "INFO"
         },
         {
+          "name": "JWT_SECRET",
+          "value": "${JWT_SECRET}"
+        },
+        {
           "name": "JWT_EXPIRATION",
           "value": "86400000"
-        }
-      ],
-      "secrets": [
-        {
-          "name": "DB_USERNAME",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/database:DB_USERNAME::"
         },
         {
-          "name": "DB_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/database:DB_PASSWORD::"
+          "name": "AI_BASE_URL",
+          "value": "https://generativelanguage.googleapis.com/v1beta/openai/"
         },
         {
-          "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/security:JWT_SECRET::"
+          "name": "AI_MODEL",
+          "value": "gemini-3.8-flash"
         },
         {
-          "name": "GOOGLE_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GOOGLE_CLIENT_ID::"
-        },
-        {
-          "name": "GOOGLE_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GOOGLE_CLIENT_SECRET::"
-        },
-        {
-          "name": "GITHUB_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GITHUB_CLIENT_ID::"
-        },
-        {
-          "name": "GITHUB_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/oauth:GITHUB_CLIENT_SECRET::"
-        },
-        {
-          "name": "OPENAI_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:ap-south-1:649424354235:secret:codesync/prod/openai:OPENAI_API_KEY::"
+          "name": "GEMINI_API_KEY",
+          "value": "${GEMINI_API_KEY}"
         }
       ],
       "logConfiguration": {
@@ -104,18 +146,8 @@
         "options": {
           "awslogs-group": "/ecs/codesync-backend",
           "awslogs-region": "ap-south-1",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-stream-prefix": "backend"
         }
-      },
-      "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP || exit 1"
-        ],
-        "interval": 30,
-        "timeout": 10,
-        "retries": 3,
-        "startPeriod": 60
       }
     }
   ]
