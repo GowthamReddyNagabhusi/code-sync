@@ -65,6 +65,17 @@ export default function Login() {
             {isSubmitting ? 'Signing in...' : 'Sign In'}
             {!isSubmitting && <ArrowRight size={18} />}
           </button>
+
+          <button
+            type="button"
+            className="btn-demo-quick"
+            onClick={() => {
+              setEmailAddress('gowtham@example.com');
+              setPassword('password123');
+            }}
+          >
+            ⚡ Pre-fill Demo Account (gowtham@example.com)
+          </button>
         </form>
 
         <p className="auth-footer">
